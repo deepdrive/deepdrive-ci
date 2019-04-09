@@ -28,6 +28,7 @@ setup(
 	zip_safe=True,
 	python_requires = '>=3.5',
 	install_requires = [
+		'arrow',
 		'setuptools>=38.6.0',
 		'twine>=1.11.0',
 		'ue4-ci-helpers>=0.0.6',
