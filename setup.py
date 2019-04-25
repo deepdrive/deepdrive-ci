@@ -30,6 +30,7 @@ setup(
 	install_requires = [
 		'arrow',
 		'setuptools>=38.6.0',
+		'tenacity',
 		'termcolor',
 		'twine>=1.11.0',
 		'ue4-ci-helpers>=0.0.6',
