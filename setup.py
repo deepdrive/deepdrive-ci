@@ -29,6 +29,8 @@ setup(
 	python_requires = '>=3.5',
 	install_requires = [
 		'arrow',
+		'boto3',
+		'docker>=3.7.0',
 		'setuptools>=38.6.0',
 		'tenacity',
 		'termcolor',
