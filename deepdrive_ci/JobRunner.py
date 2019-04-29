@@ -34,43 +34,16 @@ class JobRunner(object):
 			style = '{'
 		)
 		
-		# Create an auto-deleting temporary directory to hold our Docker certificate files
-		with tempfile.TemporaryDirectory() as tempDir:
+		# Use the default container image for the target platform if no image was specified
+		if image is None:
+			image = PlatformDefaults.default_image(platform)
+		
+		# Start a Docker container within which the CI job will be run
+		# (For jobs that actually build and run their own custom container images, this container will
+		#  just act as a proxy for our build when the CI system queries the container host's occupancy)
+		spawner = ContainerSpawner('io.deepdrive.ci')
+		container = spawner.spawn_container(image, ('ci-platform', [platform]), 'ci-capacity', None, container_options)
+		with DockerUtils.automatically_stop(container):
 			
-			# Generate the local filenames for our certificate files
-			caFile = os.path.join(tempDir, 'ca.pem')
-			certFile = os.path.join(tempDir, 'cert.pem')
-			keyFile = os.path.join(tempDir, 'key.pem')
-			certs = [caFile, certFile, keyFile]
-			
-			# Download the encrypted certificate files from S3
-			logging.info('Retrieving encrypted certificate files...')
-			for cert in certs:
-				AWSUtils.download_file('deepdrive-private', os.path.basename(cert), cert)
-			
-			# Decrypt the certificate files using KMS
-			logging.info('Decrypting certificate files...')
-			for cert in certs:
-				AWSUtils.decrypt_file(cert)
-			
-			# Create our TLS configuration to ensure mutual authentication of the Docker client and daemon
-			tls = docker.tls.TLSConfig(
-				client_cert = (certFile, keyFile),
-				ca_cert = caFile,
-				verify = True,
-				assert_hostname = False
-			)
-			
-			# Use the default container image for the target platform if no image was specified
-			if image is None:
-				image = PlatformDefaults.default_image(platform)
-			
-			# Start a Docker container within which the CI job will be run
-			# (For jobs that actually build and run their own custom container images, this container will
-			#  just act as a proxy for our build when the CI system queries the container host's occupancy)
-			spawner = ContainerSpawner('io.deepdrive.ci')
-			container = spawner.spawn_container(image, ('ci-platform', [platform]), 'ci-capacity', tls, container_options)
-			with DockerUtils.automatically_stop(container):
-				
-				# Run the actual logic for the CI job
-				job_logic(container, container.client)
+			# Run the actual logic for the CI job
+			job_logic(container, container.client)

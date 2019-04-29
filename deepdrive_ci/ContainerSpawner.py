@@ -193,7 +193,7 @@ class ContainerSpawner(object):
 					time.sleep(self._startup_time - uptime)
 				
 				# Attempt to connect to the Docker daemon
-				ip = instance.public_ip_address
+				ip = instance.public_ip_address if tls is not None else instance.private_ip_address
 				port = 2376 if tls is not None else 2375
 				client = docker.DockerClient(base_url='tcp://{}:{}'.format(ip, port), tls=tls)
 				client.ping()
